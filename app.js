@@ -9,7 +9,7 @@ background.src = "/img/fondo1080p.jpg";
 //}
 var Img = {};
 Img.player = new Image();
-Img.player.src = "/img/player.jpg";
+Img.player.src = Img.player.baseURI + "img/player.jpg";
 
 W_KEY = 83;
 S_KEY = 87;
