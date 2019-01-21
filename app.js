@@ -3,18 +3,22 @@
     background = new Image();
 canvas.width = 1800;
 canvas.height = 900;
-background.src = "/img/fondo1080p.jpg";
+//background.src = "/img/fondo1080p.jpg";
 //background.onload = function () {
 //    context.drawImage(background, 0, 0);
 //}
 var Img = {};
 Img.player = new Image();
 Img.player.src = Img.player.baseURI + "img/player.jpg";
+Img.playerBullet = new Image();
+Img.playerBullet.src = Img.playerBullet.baseURI + "img/bala1.png";
 
 W_KEY = 83;
 S_KEY = 87;
 A_KEY = 65;
 D_KEY = 68;
+
+var playerBulletList = [];
 
 var player = {
     img: Img.player,
@@ -30,14 +34,56 @@ var player = {
     wpressed: false,
     dpressed: false,
     apressed: false,
+    zpressed: false,
 }
+function addToBulletList(player) {
+    var number = playerBulletList.length;
+    var bullets = {
+        img: Img.playerBullet,
+        width: 4,
+        height: 6,
+        x: player.x + ((player.width/2)-1),
+        y: player.y,
+        velx: 10,
+        vely: 10,
+    };
+    playerBulletList[number] = bullets;
+}
+
+
 
 var jugador = player;
 setInterval(gameUpdate,40);
 function gameUpdate() {
     movePlayer();
-    updatemade = false;
+    updateBullets(playerBulletList);
+}
 
+function updateBullets(playerBulletList) {
+    if (jugador.zpressed) {
+        jugador.numberofbullets++;
+        addToBulletList(jugador);
+    }
+    for (var bullet in playerBulletList) {
+        index = bullet;
+        playerBulletList[index].y -= playerBulletList[index].vely;
+        if (outOfScreen(playerBulletList[index])) {
+            playerBulletList.splice(index, 1);
+            index--;
+        } else {
+            drawBullet(playerBulletList[index]);
+        }
+    }
+}
+
+function outOfScreen(entity) {
+    return (entity.x < -entity.width || entity.x > canvas.width || entity.y < -entity.height || entity.y > canvas.height);
+}
+
+function drawBullet(bullet) {
+    context.save();
+    context.drawImage(bullet.img, bullet.x, bullet.y);
+    context.restore();
 }
 
 function drawPlayer(player1) {
@@ -75,6 +121,9 @@ document.onkeydown = function (evt) {
     if (evt.keyCode == D_KEY) {
         jugador.dpressed = true;
     }
+    if (evt.key == "z") {
+        jugador.zpressed = true;
+    }
 }
 
 document.onkeyup = function (evt) {
@@ -89,5 +138,8 @@ document.onkeyup = function (evt) {
     }
     if (evt.keyCode == D_KEY) {
         jugador.dpressed = false;
+    }
+    if (evt.key == "z") {
+        jugador.zpressed = false;
     }
 }
