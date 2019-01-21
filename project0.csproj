@@ -68,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.js" />
+    <Content Include="img\bala1.png" />
     <Content Include="img\fondo1080p.jpg" />
     <Content Include="img\player.jpg" />
     <Content Include="index.html" />
