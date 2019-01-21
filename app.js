@@ -77,7 +77,7 @@ function updateBullets(playerBulletList) {
 }
 
 function outOfScreen(entity) {
-    return (entity.x < -entity.width || entity.x > canvas.width || entity.y < 100 || entity.y > canvas.height);
+    return (entity.x < -entity.width || entity.x > canvas.width || entity.y < -entity.height || entity.y > canvas.height);
 }
 
 function drawBullet(bullet) {
