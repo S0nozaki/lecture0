@@ -12,13 +12,8 @@ Img.player = new Image();
 Img.player.src = Img.player.baseURI + "img/player.jpg";
 Img.playerBullet = new Image();
 Img.playerBullet.src = Img.playerBullet.baseURI + "img/bala1.png";
-
-W_KEY = 83;
-S_KEY = 87;
-A_KEY = 65;
-D_KEY = 68;
-
-var playerBulletList = [];
+Img.enemy1 = new Image();
+Img.enemy1.src = Img.enemy1.baseURI + "img/enemy1.jpg";
 
 var player = {
     img: Img.player,
@@ -36,6 +31,9 @@ var player = {
     apressed: false,
     zpressed: false,
 }
+
+var playerBulletList = [];
+
 function addToBulletList(player) {
     var number = playerBulletList.length;
     var bullets = {
@@ -50,22 +48,59 @@ function addToBulletList(player) {
     playerBulletList[number] = bullets;
 }
 
+var enemyList = [];
 
+function addToEnemyList(initialX, initialY, targetX, targetY, index) {
+    var enemy1 = {
+        img: Img.enemy1,
+        width: 40,
+        height: 40,
+        x: initialX,
+        y: initialY,
+        velx: 10,
+        vely: 10,
+        targetX: targetX,
+        targetY: targetY,
+        numberOfHitEndurance: 3,
+    };
+    enemyList[index] = enemy1;
+}
 
-var jugador = player;
-setInterval(gameUpdate,40);
+var framerate = 0;
+var numberOfEnemies = 0;
+
+setInterval(gameUpdate, 40);
+
 function gameUpdate() {
-    movePlayer();
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    framerate++;
+    updatePlayer();
     updateBullets(playerBulletList);
+    updateEnemies();
+}
+
+function updatePlayer() {
+    if (player.wpressed) {
+        player.y += player.vely;
+    }
+    if (player.spressed) {
+        player.y -= player.vely;
+    }
+    if (player.apressed) {
+        player.x -= player.velx;
+    }
+    if (player.dpressed) {
+        player.x += player.velx;
+    }
+    drawPlayer(player);
 }
 
 function updateBullets(playerBulletList) {
-    if (jugador.zpressed) {
-        jugador.numberofbullets++;
-        addToBulletList(jugador);
+    if (player.zpressed) {
+        player.numberofbullets++;
+        addToBulletList(player);
     }
-    for (var bullet in playerBulletList) {
-        index = bullet;
+    for (var index = 0; index < playerBulletList.length; index++) {
         playerBulletList[index].y -= playerBulletList[index].vely;
         if (outOfScreen(playerBulletList[index])) {
             playerBulletList.splice(index, 1);
@@ -76,8 +111,30 @@ function updateBullets(playerBulletList) {
     }
 }
 
-function outOfScreen(entity) {
-    return (entity.x < -entity.width || entity.x > canvas.width || entity.y < -entity.height || entity.y > canvas.height);
+function updateEnemies() {
+
+    if (framerate % 40 == 0) {
+        addToEnemyList(1000, 50, 0, 20, numberOfEnemies)
+        numberOfEnemies++;
+    }
+    if (enemyList.length != 0) {
+        for (var index = 0; index < enemyList.length; index++) {
+            enemyList[index].x -= enemyList[index].velx;
+            if (outOfScreen(enemyList[index])) {
+                enemyList.splice(index, 1);
+                index--;
+                numberOfEnemies--;
+            } else {
+                drawEnemy(enemyList[index]);
+            }
+        }
+    }
+}
+
+function drawPlayer(player1) {
+    context.save();
+    context.drawImage(player1.img, player1.x, player1.y);
+    context.restore();
 }
 
 function drawBullet(bullet) {
@@ -86,60 +143,53 @@ function drawBullet(bullet) {
     context.restore();
 }
 
-function drawPlayer(player1) {
+function drawEnemy(enemy) {
     context.save();
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(player1.img, player1.x, player1.y);
+    context.drawImage(enemy.img, enemy.x, enemy.y);
     context.restore();
 }
 
-function movePlayer() {
-    if (jugador.wpressed) {
-        jugador.y += jugador.vely;
-    }
-    if (jugador.spressed) {
-        jugador.y -= jugador.vely;
-    }
-    if (jugador.apressed) {
-        jugador.x -= jugador.velx;
-    }
-    if (jugador.dpressed) {
-        jugador.x += jugador.velx;
-    }
-    drawPlayer(jugador);
+function outOfScreen(entity) {
+    return (entity.x <= -entity.width || entity.x >= canvas.width || entity.y <= -entity.height || entity.y >= canvas.height);
 }
+
+W_KEY = 83;
+S_KEY = 87;
+A_KEY = 65;
+D_KEY = 68;
+
 document.onkeydown = function (evt) {
     if (evt.keyCode == W_KEY) {
-        jugador.wpressed = true;
+        player.wpressed = true;
     }
     if (evt.keyCode == S_KEY) {
-        jugador.spressed = true;
+        player.spressed = true;
     }
     if (evt.keyCode == A_KEY) {
-        jugador.apressed = true;
+        player.apressed = true;
     }
     if (evt.keyCode == D_KEY) {
-        jugador.dpressed = true;
+        player.dpressed = true;
     }
     if (evt.key == "z") {
-        jugador.zpressed = true;
+        player.zpressed = true;
     }
 }
 
 document.onkeyup = function (evt) {
     if (evt.keyCode == W_KEY) {
-        jugador.wpressed = false;
+        player.wpressed = false;
     }
     if (evt.keyCode == S_KEY) {
-        jugador.spressed = false;
+        player.spressed = false;
     }
     if (evt.keyCode == A_KEY) {
-        jugador.apressed = false;
+        player.apressed = false;
     }
     if (evt.keyCode == D_KEY) {
-        jugador.dpressed = false;
+        player.dpressed = false;
     }
     if (evt.key == "z") {
-        jugador.zpressed = false;
+        player.zpressed = false;
     }
 }
