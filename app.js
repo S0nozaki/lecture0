@@ -61,7 +61,7 @@ function addToEnemyList(initialX, initialY, targetX, targetY, index) {
         vely: 10,
         targetX: targetX,
         targetY: targetY,
-        numberOfHitEndurance: 3,
+        numberOfHitEndurance: 5,
     };
     enemyList[index] = enemy1;
 }
@@ -80,6 +80,14 @@ function gameUpdate() {
 }
 
 function updatePlayer() {
+    if (player.lives <= 0) {
+        alert("You Lost!! Press Ok to Keep Playing");
+        player.lives = 3;
+        player.wpressed = false;
+        player.apressed = false;
+        player.spressed = false;
+        player.dpressed = false;
+    }
     if (player.wpressed) {
         player.y += player.vely;
     }
@@ -102,7 +110,7 @@ function updateBullets(playerBulletList) {
     }
     for (var index = 0; index < playerBulletList.length; index++) {
         playerBulletList[index].y -= playerBulletList[index].vely;
-        if (outOfScreen(playerBulletList[index])) {
+        if (outOfScreen(playerBulletList[index]) || collisionWithEnemy(playerBulletList[index])) {
             playerBulletList.splice(index, 1);
             index--;
         } else {
@@ -120,7 +128,7 @@ function updateEnemies() {
     if (enemyList.length != 0) {
         for (var index = 0; index < enemyList.length; index++) {
             enemyList[index].x -= enemyList[index].velx;
-            if (outOfScreen(enemyList[index])) {
+            if (outOfScreen(enemyList[index]) || enemyList[index].numberOfHitEndurance <= 0 || collisionWithPlayer(enemyList[index])) {
                 enemyList.splice(index, 1);
                 index--;
                 numberOfEnemies--;
@@ -151,6 +159,24 @@ function drawEnemy(enemy) {
 
 function outOfScreen(entity) {
     return (entity.x <= -entity.width || entity.x >= canvas.width || entity.y <= -entity.height || entity.y >= canvas.height);
+}
+
+function collisionWithEnemy(bullet) {
+    for (var index = 0; index < enemyList.length; index++) {
+        if (bullet.x + bullet.width >= enemyList[index].x && bullet.x <= (enemyList[index].x + enemyList[index].width) && bullet.y + bullet.height > enemyList[index].y && bullet.y < (enemyList[index].y + enemyList[index].height)) {
+            enemyList[index].numberOfHitEndurance--;
+            return true;
+        }
+    }
+    return false;
+}
+
+function collisionWithPlayer(enemy) {
+    if (enemy.x + enemy.width > player.x && enemy.x <= (player.x + player.width) && enemy.y + enemy.height > player.y && enemy.y < (player.y + player.height)) {
+        enemy.numberOfHitEndurance--;
+        player.lives--;
+        return true;
+    }
 }
 
 W_KEY = 83;
