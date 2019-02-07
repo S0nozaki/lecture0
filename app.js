@@ -14,17 +14,19 @@ Img.playerBullet = new Image();
 Img.playerBullet.src = Img.playerBullet.baseURI + "img/bala1.png";
 Img.enemy1 = new Image();
 Img.enemy1.src = Img.enemy1.baseURI + "img/enemy1.jpg";
+Img.enemyBullet1 = new Image();
+Img.enemyBullet1.src = Img.enemyBullet1.baseURI + "img/enemyBullet1.jpg";
 
 var player = {
     img: Img.player,
     height: 40,
     width: 40,
-    x:0,
-    y: 0,
+    x: 900,
+    y: 700,
     velx:10,
     vely:10,
     health: 20,
-    lives: 3,
+    lives: 5,
     spressed: false,
     wpressed: false,
     dpressed: false,
@@ -42,26 +44,51 @@ function addToBulletList(player) {
         height: 6,
         x: player.x + ((player.width/2)-1),
         y: player.y,
-        velx: 10,
-        vely: 10,
+        velx: 14,
+        vely: 14,
     };
     playerBulletList[number] = bullets;
 }
 
+var enemyBulletList = [];
+
+function addToEnemyBulletList(enemy) {
+    var number = enemyBulletList.length;
+    var enemyBullets = {
+        img: Img.enemyBullet1,
+        width: 4,
+        height: 6,
+        x: enemy.x + ((enemy.width / 2) - 1),
+        y: enemy.y + enemy.width,
+        velx: 10,
+        vely: ((enemy.y + enemy.width) - player.y) /10,
+        targetX: enemy.targetX,
+        targetY: enemy.targetY,
+        //len: Math.sqrt(((enemy.x + enemy.width) - player.x) * ((enemy.x + enemy.width) - player.x) + ((enemy.y + enemy.height) - player.y) * ((enemy.y + enemy.height) - player.y));
+        directionX: ((enemy.x + enemy.width) - player.x) / Math.sqrt(((enemy.x + enemy.width) - player.x) * ((enemy.x + enemy.width) - player.x) + ((enemy.y + enemy.height) - player.y) * ((enemy.y + enemy.height) - player.y)),
+        directionY: ((enemy.y + enemy.height) - player.y) / Math.sqrt(((enemy.x + enemy.width) - player.x) * ((enemy.x + enemy.width) - player.x) + ((enemy.y + enemy.height) - player.y) * ((enemy.y + enemy.height) - player.y)),
+        velocity: 10,
+    };
+    enemyBulletList[number] = enemyBullets;
+}
+
 var enemyList = [];
 
-function addToEnemyList(initialX, initialY, targetX, targetY, index) {
+function addToEnemyList(initialX, initialY, targetX, targetY, index, enemyType) {
     var enemy1 = {
-        img: Img.enemy1,
+        type: enemyType,
+        img: Img[enemyType],
         width: 40,
         height: 40,
         x: initialX,
         y: initialY,
-        velx: 10,
-        vely: 10,
+        velx: 8,
+        vely: 8,
         targetX: targetX,
         targetY: targetY,
         numberOfHitEndurance: 5,
+        bulletCounter: 0,
+        shootFlag: false,
     };
     enemyList[index] = enemy1;
 }
@@ -77,16 +104,25 @@ function gameUpdate() {
     updatePlayer();
     updateBullets(playerBulletList);
     updateEnemies();
+    updateEnemyBullets(enemyBulletList);
 }
 
 function updatePlayer() {
     if (player.lives <= 0) {
         alert("You Lost!! Press Ok to Keep Playing");
-        player.lives = 3;
+        player.lives = 5;
+        player.x = 900;
+        player.y = 700;
         player.wpressed = false;
         player.apressed = false;
         player.spressed = false;
         player.dpressed = false;
+        player.zpressed = false;
+        playerBulletList = [];
+        enemyList = [];
+        numberOfEnemies = 0;
+        enemyBulletList = [];
+
     }
     if (player.wpressed) {
         player.y += player.vely;
@@ -100,7 +136,7 @@ function updatePlayer() {
     if (player.dpressed) {
         player.x += player.velx;
     }
-    drawPlayer(player);
+    draw(player);
 }
 
 function updateBullets(playerBulletList) {
@@ -114,7 +150,7 @@ function updateBullets(playerBulletList) {
             playerBulletList.splice(index, 1);
             index--;
         } else {
-            drawBullet(playerBulletList[index]);
+            draw(playerBulletList[index]);
         }
     }
 }
@@ -122,38 +158,52 @@ function updateBullets(playerBulletList) {
 function updateEnemies() {
 
     if (framerate % 40 == 0) {
-        addToEnemyList(1000, 50, 0, 20, numberOfEnemies)
+        addToEnemyList(1600, 50, 0, 20, numberOfEnemies, "enemy1")
         numberOfEnemies++;
     }
     if (enemyList.length != 0) {
         for (var index = 0; index < enemyList.length; index++) {
             enemyList[index].x -= enemyList[index].velx;
+            enemyList[index].bulletCounter++;
             if (outOfScreen(enemyList[index]) || enemyList[index].numberOfHitEndurance <= 0 || collisionWithPlayer(enemyList[index])) {
                 enemyList.splice(index, 1);
                 index--;
                 numberOfEnemies--;
             } else {
-                drawEnemy(enemyList[index]);
+                draw(enemyList[index]);
+                if (enemyList[index].bulletCounter == 10) {
+                    enemyList[index].bulletCounter = 0;
+                    enemyList[index].shootFlag = true;
+                    enemyList[index].targetX = player.x + player.width / 2;
+                    enemyList[index].targetX = player.y + player.height / 2;
+                }
+                if (enemyList[index].shootFlag == true) {
+                    enemyList[index].shootFlag = false;
+                    addToEnemyBulletList(enemyList[index]);
+                }
             }
         }
     }
 }
 
-function drawPlayer(player1) {
-    context.save();
-    context.drawImage(player1.img, player1.x, player1.y);
-    context.restore();
+function updateEnemyBullets(enemyBulletsList) {
+    for (var index = 0; index < enemyBulletsList.length; index++) {
+        //enemyBulletsList[index].y -= enemyBulletsList[index].vely;
+        enemyBulletsList[index].x -= enemyBulletsList[index].directionX * enemyBulletsList[index].velocity;
+        enemyBulletsList[index].y -= enemyBulletsList[index].directionY * enemyBulletsList[index].velocity;
+        //if (outOfScreen(enemyBulletsList[index]) || collisionWithEnemy(enemyBulletsList[index])) {
+        if (outOfScreen(enemyBulletsList[index]) || bulletCollisionWithPlayer(enemyBulletsList[index])) {
+            enemyBulletsList.splice(index, 1);
+            index--;
+        } else {
+            draw(enemyBulletsList[index]);
+        }
+    }
 }
 
-function drawBullet(bullet) {
+function draw(drawableEntity) {
     context.save();
-    context.drawImage(bullet.img, bullet.x, bullet.y);
-    context.restore();
-}
-
-function drawEnemy(enemy) {
-    context.save();
-    context.drawImage(enemy.img, enemy.x, enemy.y);
+    context.drawImage(drawableEntity.img, drawableEntity.x, drawableEntity.y);
     context.restore();
 }
 
@@ -174,6 +224,13 @@ function collisionWithEnemy(bullet) {
 function collisionWithPlayer(enemy) {
     if (enemy.x + enemy.width > player.x && enemy.x <= (player.x + player.width) && enemy.y + enemy.height > player.y && enemy.y < (player.y + player.height)) {
         enemy.numberOfHitEndurance--;
+        player.lives--;
+        return true;
+    }
+}
+
+function bulletCollisionWithPlayer(bullet) {
+    if (bullet.x + bullet.width > player.x && bullet.x <= (player.x + player.width) && bullet.y + bullet.height > player.y && bullet.y < (player.y + player.height)) {
         player.lives--;
         return true;
     }
