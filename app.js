@@ -7,15 +7,22 @@ canvas.height = 900;
 //background.onload = function () {
 //    context.drawImage(background, 0, 0);
 //}
+
+var baseURI = "";
+var development = false;
+if(development == false){
+    baseURI = background.baseURI;
+}
+
 var Img = {};
 Img.player = new Image();
-Img.player.src = Img.player.baseURI + "img/player.jpg";
+Img.player.src = baseURI + "img/player.jpg";
 Img.playerBullet = new Image();
-Img.playerBullet.src = Img.playerBullet.baseURI + "img/bala1.png";
+Img.playerBullet.src = baseURI + "img/bala1.png";
 Img.enemy1 = new Image();
-Img.enemy1.src = Img.enemy1.baseURI + "img/enemy1.jpg";
+Img.enemy1.src = baseURI + "img/enemy1.jpg";
 Img.enemyBullet1 = new Image();
-Img.enemyBullet1.src = Img.enemyBullet1.baseURI + "img/enemyBullet1.jpg";
+Img.enemyBullet1.src = baseURI + "img/enemyBullet1.jpg";
 
 var player = {
     img: Img.player,
