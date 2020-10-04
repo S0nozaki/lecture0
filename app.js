@@ -1,4 +1,9 @@
-﻿var canvas = document.getElementById("canvas"),
+﻿import Player from '/player.js'
+import Enemy from '/enemy.js'
+import PlayerBullet from '/playerBullet.js'
+import EnemyBullet from '/enemyBullet.js'
+
+var canvas = document.getElementById("canvas"),
     context = canvas.getContext("2d"),
     background = new Image();
 canvas.width = 1800;
@@ -9,7 +14,7 @@ canvas.height = 900;
 //}
 
 var baseURI = "";
-var development = false;
+var development = true;
 if(development == false){
     baseURI = background.baseURI;
 }
@@ -24,135 +29,55 @@ Img.enemy1.src = baseURI + "img/enemy1.jpg";
 Img.enemyBullet1 = new Image();
 Img.enemyBullet1.src = baseURI + "img/enemyBullet1.jpg";
 
-var player = {
-    img: Img.player,
-    height: 40,
-    width: 40,
-    x: 900,
-    y: 700,
-    velx:10,
-    vely:10,
-    health: 20,
-    lives: 5,
-    spressed: false,
-    wpressed: false,
-    dpressed: false,
-    apressed: false,
-    zpressed: false,
-}
+var player = new Player(Img.player);
 
 var playerBulletList = [];
-
-function addToBulletList(player) {
-    var number = playerBulletList.length;
-    var bullets = {
-        img: Img.playerBullet,
-        width: 4,
-        height: 6,
-        x: player.x + ((player.width/2)-1),
-        y: player.y,
-        velx: 14,
-        vely: 14,
-    };
-    playerBulletList[number] = bullets;
-}
-
 var enemyBulletList = [];
-
-function addToEnemyBulletList(enemy) {
-    var number = enemyBulletList.length;
-    var enemyBullets = {
-        img: Img.enemyBullet1,
-        width: 4,
-        height: 6,
-        x: enemy.x + ((enemy.width / 2) - 1),
-        y: enemy.y + enemy.width,
-        velx: 10,
-        vely: ((enemy.y + enemy.width) - player.y) /10,
-        targetX: enemy.targetX,
-        targetY: enemy.targetY,
-        //len: Math.sqrt(((enemy.x + enemy.width) - player.x) * ((enemy.x + enemy.width) - player.x) + ((enemy.y + enemy.height) - player.y) * ((enemy.y + enemy.height) - player.y));
-        directionX: ((enemy.x + enemy.width) - player.x) / Math.sqrt(((enemy.x + enemy.width) - player.x) * ((enemy.x + enemy.width) - player.x) + ((enemy.y + enemy.height) - player.y) * ((enemy.y + enemy.height) - player.y)),
-        directionY: ((enemy.y + enemy.height) - player.y) / Math.sqrt(((enemy.x + enemy.width) - player.x) * ((enemy.x + enemy.width) - player.x) + ((enemy.y + enemy.height) - player.y) * ((enemy.y + enemy.height) - player.y)),
-        velocity: 10,
-    };
-    enemyBulletList[number] = enemyBullets;
-}
-
 var enemyList = [];
-
-function addToEnemyList(initialX, initialY, targetX, targetY, index, enemyType) {
-    var enemy1 = {
-        type: enemyType,
-        img: Img[enemyType],
-        width: 40,
-        height: 40,
-        x: initialX,
-        y: initialY,
-        velx: 8,
-        vely: 8,
-        targetX: targetX,
-        targetY: targetY,
-        numberOfHitEndurance: 5,
-        bulletCounter: 0,
-        shootFlag: false,
-    };
-    enemyList[index] = enemy1;
-}
-
 var framerate = 0;
-var numberOfEnemies = 0;
 
 setInterval(gameUpdate, 40);
 
 function gameUpdate() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     framerate++;
-    updatePlayer();
+    checkDeath();
+    player.update();
+    draw(player);
+    generateEnemies();
+    generateBullets();
     updateBullets(playerBulletList);
     updateEnemies();
     updateEnemyBullets(enemyBulletList);
 }
 
-function updatePlayer() {
-    if (player.lives <= 0) {
-        alert("You Lost!! Press Ok to Keep Playing");
-        player.lives = 5;
-        player.x = 900;
-        player.y = 700;
-        player.wpressed = false;
-        player.apressed = false;
-        player.spressed = false;
-        player.dpressed = false;
-        player.zpressed = false;
+function checkDeath() {
+    if (!player.isAlive()) {
+        alert("You Lost!! Press Ok to Play again");
+        player = new Player(Img.player);
         playerBulletList = [];
         enemyList = [];
-        numberOfEnemies = 0;
         enemyBulletList = [];
+    }
+}
 
+function generateEnemies(){
+    if (framerate % 40 == 0) {
+        var enemy = new Enemy(Img.enemy1, 1600, 50, 0, 20);
+        enemyList.push(enemy);
     }
-    if (player.wpressed) {
-        player.y += player.vely;
+}
+
+function generateBullets(){
+    if (player.zpressed) {
+        var bullet = new PlayerBullet(Img.playerBullet, player.x, player.y, player.width);
+        playerBulletList.push(bullet);
     }
-    if (player.spressed) {
-        player.y -= player.vely;
-    }
-    if (player.apressed) {
-        player.x -= player.velx;
-    }
-    if (player.dpressed) {
-        player.x += player.velx;
-    }
-    draw(player);
 }
 
 function updateBullets(playerBulletList) {
-    if (player.zpressed) {
-        player.numberofbullets++;
-        addToBulletList(player);
-    }
     for (var index = 0; index < playerBulletList.length; index++) {
-        playerBulletList[index].y -= playerBulletList[index].vely;
+        playerBulletList[index].updatePosition();
         if (outOfScreen(playerBulletList[index]) || collisionWithEnemy(playerBulletList[index])) {
             playerBulletList.splice(index, 1);
             index--;
@@ -163,11 +88,6 @@ function updateBullets(playerBulletList) {
 }
 
 function updateEnemies() {
-
-    if (framerate % 40 == 0) {
-        addToEnemyList(1600, 50, 0, 20, numberOfEnemies, "enemy1")
-        numberOfEnemies++;
-    }
     if (enemyList.length != 0) {
         for (var index = 0; index < enemyList.length; index++) {
             enemyList[index].x -= enemyList[index].velx;
@@ -175,7 +95,6 @@ function updateEnemies() {
             if (outOfScreen(enemyList[index]) || enemyList[index].numberOfHitEndurance <= 0 || collisionWithPlayer(enemyList[index])) {
                 enemyList.splice(index, 1);
                 index--;
-                numberOfEnemies--;
             } else {
                 draw(enemyList[index]);
                 if (enemyList[index].bulletCounter == 10) {
@@ -186,7 +105,8 @@ function updateEnemies() {
                 }
                 if (enemyList[index].shootFlag == true) {
                     enemyList[index].shootFlag = false;
-                    addToEnemyBulletList(enemyList[index]);
+                    var enemyBullet = new EnemyBullet(Img.enemyBullet1, enemyList[index], player.x, player.y);
+                    enemyBulletList.push(enemyBullet);
                 }
             }
         }
@@ -243,10 +163,10 @@ function bulletCollisionWithPlayer(bullet) {
     }
 }
 
-W_KEY = 83;
-S_KEY = 87;
-A_KEY = 65;
-D_KEY = 68;
+const W_KEY = 83;
+const S_KEY = 87;
+const A_KEY = 65;
+const D_KEY = 68;
 
 document.onkeydown = function (evt) {
     if (evt.keyCode == W_KEY) {
