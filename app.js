@@ -14,7 +14,7 @@ canvas.height = 900;
 //}
 
 var baseURI = "";
-var development = true;
+var development = false;
 if(development == false){
     baseURI = background.baseURI;
 }
